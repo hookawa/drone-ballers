@@ -51,13 +51,21 @@ function update()
         -- set target(小山球場)
         target_loc.lat(target_loc, 363145900)
         target_loc.lng(target_loc, 1398523800)
-        target_loc.alt(target_loc, 37)
+        target_loc.alt(target_loc, 6710) -- 海抜37.1m + 高度30m
         vehicle:set_target_location(target_loc)
         gcs:send_text(0, string.format("set target location!"))
         stage = stage + 1
 
         -- for stage 4
       elseif (stage == 4) then  -- Stage4: wait for goal
+
+        local current_pos = ahrs:get_position()
+        local distance = current_pos.get_distance(current_pos, target_loc)
+        gcs:send_text(0, string.format("distance:%f", distance))
+        if(distance < 3) then
+          gcs:send_text(0, string.format("arrive at target location!"))
+          stage = stage + 1
+        end
 
       elseif (stage == 5) then  -- Stage5: change to RTL mode
         vehicle:set_mode(copter_rtl_mode_num)
