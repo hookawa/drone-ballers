@@ -4,7 +4,7 @@
 -- this script waits for the vehicle to be armed and RC6 input > 1800 and then:
 --    a) switches to Guided mode
 --    b) takeoff to 30m
---    c) flies to thr oyama pitcher mound
+--    c) flies to the oyama pitcher mound
 --    d) flies a vertical circle
 --    e) switches to RTL mode
 
@@ -36,6 +36,9 @@ function update()
     if pwm6 and pwm6 > 1800 then    -- check if RC6 input has moved high
       if (stage == 0) then          -- change to guided mode
         if (vehicle:set_mode(copter_guided_mode_num)) then  -- change to Guided mode
+          local yaw_rad = ahrs:get_yaw()
+          yaw_cos = math.cos(yaw_rad)
+          yaw_sin = math.sin(yaw_rad)
           stage = stage + 1
         end
       elseif (stage == 1) then      -- Stage1: takeoff
