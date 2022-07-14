@@ -5,7 +5,8 @@
 --    a) switches to Guided mode
 --    b) takeoff to 30m
 --    c) flies to thr oyama pitcher mound
---    d) switches to RTL mode
+--    d) flies a vertical circle
+--    e) switches to RTL mode
 
 local takeoff_alt_above_home = 30
 local copter_guided_mode_num = 4
@@ -13,6 +14,11 @@ local copter_rtl_mode_num = 6
 local stage = 0
 local target_loc = Location()
 local w_stage = -1
+local circle_angle = 0
+local circle_angle_increment = 1    -- increment the target angle by 1 deg every 0.1 sec (i.e. 10deg/sec)
+local circle_speed = 1              -- velocity is always 1m/s
+local yaw_cos = 0                   -- cosine of yaw at takeoff
+local yaw_sin = 0                   -- sine of yaw at takeoff
 
 -- the main update function that uses the takeoff and velocity controllers to fly a rough square pattern
 function update()
@@ -67,7 +73,26 @@ function update()
           stage = stage + 1
         end
 
-      elseif (stage == 5) then  -- Stage5: change to RTL mode
+      elseif (stage == 5 ) then   -- Stage5: fly a vertical circle
+
+        -- calculate velocity vector
+        circle_angle = circle_angle + circle_angle_increment
+        if (circle_angle >= 360) then
+          stage = stage + 1
+          circle_angle = 0
+        end
+        local target_vel = Vector3f()
+        local vel_xy = math.cos(math.rad(circle_angle)) * circle_speed
+        target_vel:x(yaw_sin * vel_xy)
+        target_vel:y(yaw_cos * -vel_xy)
+        target_vel:z(-math.sin(math.rad(circle_angle)) * circle_speed)
+
+        -- send velocity request
+        if not (vehicle:set_target_velocity_NED(target_vel)) then
+          gcs:send_text(0, "failed to execute velocity command")
+        end
+
+      elseif (stage == 6) then  -- Stage6: change to RTL mode
         vehicle:set_mode(copter_rtl_mode_num)
         stage = stage + 1
         gcs:send_text(0, "finished, switching to RTL")
